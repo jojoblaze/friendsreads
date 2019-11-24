@@ -90,8 +90,6 @@ router.get('/goodreads_callback', async function (req, res) {
 
     console.log(userData.user.id);
     let readBooks = await gr.getBooksOnUserShelf(userData.user.id, 'read');
-    let currentlyReadingBooks = await gr.getBooksOnUserShelf(userData.user.id, 'currently-reading');
-
 
     for(let i = 0; i < readBooks.books.book.length; i++) {
         
@@ -131,7 +129,39 @@ router.get('/goodreads_callback', async function (req, res) {
     }
 
 
-    res.json({ user: goodReadsUser, readBooks: goodReadsUser.read_books, currentlyReadingBooks: currentlyReadingBooks });
+    let currentlyReadingBooks = await gr.getBooksOnUserShelf(userData.user.id, 'currently-reading');
+
+    for(let i = 0; i < currentlyReadingBooks.books.book.length; i++) {
+        
+        let book = { id: null, isbn: null, isbn13: null, title: null, small_image_url: null, num_pages: null, authors: [], rates: null };
+
+        book.id = currentlyReadingBooks.books.book[i].id._;
+        book.isbn = currentlyReadingBooks.books.book[i].isbn;
+        book.isbn13 = currentlyReadingBooks.books.book[i].isbn13;
+        book.title = currentlyReadingBooks.books.book[i].title;
+        book.small_image_url = currentlyReadingBooks.books.book[i].small_image_url;
+        book.num_pages = currentlyReadingBooks.books.book[i].num_pages;
+
+        
+        // for(let a = 0; a < currentlyReadingBooks.books.book[i].authors.author.length; a++) {
+        //     let author = { id: null, name: null }
+        //     author.id = currentlyReadingBooks.books.book[i].authors.author[a].id;
+        //     author.name = currentlyReadingBooks.books.book[i].authors.author[a].name;
+        //     book.authors.push(author);
+        // }
+
+        // author mapping
+        let author = { id: null, name: null }
+        author.id = currentlyReadingBooks.books.book[i].authors.author.id;
+        author.name = currentlyReadingBooks.books.book[i].authors.author.name;
+        // /////
+        
+        book.authors.push(author);
+
+        goodReadsUser.reading_books.push(book);
+    }
+
+    res.json({ user: goodReadsUser });
 
 });
 
