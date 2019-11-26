@@ -34,47 +34,6 @@ const gr = goodreads(myCredentials);
 gr.initOAuth(callbackURL);
 
 
-// test route to make sure everything is working (accessed at GET http://localhost:8080/api)
-router.get('/', function (req, res) {
-
-    // // anonymous client
-    // const gr = goodreads(myCredentials);
-
-
-
-    gr.getRequestToken()
-        .then(url => {
-            /* redirect your user to this url to ask for permission */
-            res.redirect(url);
-        });
-
-    // gr.getBooksByAuthor('175417')
-    //     .then((data) => {
-    //         console.log(data);
-    //         res.json({ message: data });
-    //     });
-
-    // res.json({ message: 'hooray! welcome to our api!' });
-});
-
-
-
-// router.get('/goodreads_callback', function (req, res) {
-
-//     let oauth_token = req.query.oauth_token;
-//     console.log(oauth_token);
-    
-//     gr.getAccessToken()
-//         .then(() => {
-//             /* you can now make authenticated requests */
-
-//             gr.getCurrentUserInfo()
-//                 .then((data) => {
-//                     res.json({ message: data });
-//                 });
-
-//         }, (error) => console.log(error));
-// });
 
 router.get('/goodreads_callback', async function (req, res) {
 
@@ -83,13 +42,13 @@ router.get('/goodreads_callback', async function (req, res) {
     
     await gr.getAccessToken();
 
-    let userData = await gr.getCurrentUserInfo();
+    let userData = await gr.getCurrentUserInfo().catch((errors) => { /*handle errors here*/ console.log(errors); });
 
     goodReadsUser.id = userData.user.id;
     goodReadsUser.name = userData.user.name;
 
     console.log(userData.user.id);
-    let readBooks = await gr.getBooksOnUserShelf(userData.user.id, 'read');
+    let readBooks = await gr.getBooksOnUserShelf(userData.user.id, 'read').catch((errors) => { /*handle errors here*/ console.log(errors); });
 
     for(let i = 0; i < readBooks.books.book.length; i++) {
         
@@ -118,7 +77,7 @@ router.get('/goodreads_callback', async function (req, res) {
         // /////
 
         // console.log(book);
-        let userReview = await gr.getUsersReviewForBook(goodReadsUser.id, book.id);
+        let userReview = await gr.getUsersReviewForBook(goodReadsUser.id, book.id).catch((errors) => { /*handle errors here*/ console.log(errors); });
 
         // console.log(userReview);
         book.rates = userReview.review.rating;
@@ -129,7 +88,7 @@ router.get('/goodreads_callback', async function (req, res) {
     }
 
 
-    let currentlyReadingBooks = await gr.getBooksOnUserShelf(userData.user.id, 'currently-reading');
+    let currentlyReadingBooks = await gr.getBooksOnUserShelf(userData.user.id, 'currently-reading').catch((errors) => { /*handle errors here*/ console.log(errors); });
 
     for(let i = 0; i < currentlyReadingBooks.books.book.length; i++) {
         
@@ -167,10 +126,12 @@ router.get('/goodreads_callback', async function (req, res) {
 
 
 // more routes for our API will happen here
+const goodreadsRouter = require('./routes/goodreads.routes');
+
 
 // REGISTER OUR ROUTES -------------------------------
 // all of our routes will be prefixed with /api
-app.use('/api', router);
+app.use('/api', goodreadsRouter);
 
 // START THE SERVER
 // =============================================================================
@@ -178,5 +139,3 @@ app.use('/api', router);
 console.log('Magic happens on port ' + port);
 
 app.listen(port, () => { console.log('We are live on ' + port); });
-
-
