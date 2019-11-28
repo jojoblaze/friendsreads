@@ -1,0 +1,35 @@
+version: '3.3'
+services:
+    elasticsearch:
+        image: 'docker.elastic.co/elasticsearch/elasticsearch:6.4.1'
+        environment:
+            - cluster.name=docker-cluster
+            - bootstrap.memory_lock=true
+            - 'API_USER=${API_USER}'
+            - 'API_SECRET=${API_SECRET}'
+            - 'ES_JAVA_OPTS=-Xms512m -Xmx512m'
+        ulimits:
+            memlock: {soft: -1, hard: -1}
+        ports:
+            - '9200:9200'
+        networks:
+            - esnet
+
+
+    api:
+        environment:
+            - 'GOODREADS_KEY=${GOODREADS_KEY}'
+            - 'GOODREADS_SECRET=${GOODREADS_SECRET}'
+            - NODE_ENV=development
+            - SERVER_PORT=3000
+            - ELASTICSEARCH_HOST=elasticsearch
+            - 'ELASTICSEARCH_PORT=${ELASTICSEARCH_PORT}'
+        depends_on:
+            - elasticsearch
+        image: friendsreads-api
+        ports:
+            - '8000:8000'
+        restart: always
+
+networks:
+  esnet:

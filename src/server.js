@@ -136,6 +136,6 @@ app.use('/api', goodreadsRouter);
 // START THE SERVER
 // =============================================================================
 
-console.log('Magic happens on port ' + port);
+console.log('Magic happens on http://localhost:' + port + '/api/goodreads_auth');
 
 app.listen(port, () => { console.log('We are live on ' + port); });

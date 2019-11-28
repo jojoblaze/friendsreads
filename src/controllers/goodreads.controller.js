@@ -1,7 +1,7 @@
 
 
 const goodreads = require('goodreads-api-node');
-
+const axios = require('axios');
 
 let goodReadsUser = { id: null, name: null, read_books: [], reading_books: [] }
 
@@ -28,7 +28,7 @@ exports.goodreads_callback = async function (req, res) {
 
     let oauth_token = req.query.oauth_token;
     console.log(oauth_token);
-    
+
     await gr.getAccessToken();
 
     let userData = await gr.getCurrentUserInfo();
@@ -39,8 +39,8 @@ exports.goodreads_callback = async function (req, res) {
     console.log(userData.user.id);
     let readBooks = await gr.getBooksOnUserShelf(userData.user.id, 'read');
 
-    for(let i = 0; i < readBooks.books.book.length; i++) {
-        
+    for (let i = 0; i < readBooks.books.book.length; i++) {
+
         let book = { id: null, isbn: null, isbn13: null, title: null, small_image_url: null, num_pages: null, authors: [], rates: null };
 
         book.id = readBooks.books.book[i].id._;
@@ -50,7 +50,7 @@ exports.goodreads_callback = async function (req, res) {
         book.small_image_url = readBooks.books.book[i].small_image_url;
         book.num_pages = readBooks.books.book[i].num_pages;
 
-        
+
         // for(let a = 0; a < readBooks.books.book[i].authors.author.length; a++) {
         //     let author = { id: null, name: null }
         //     author.id = readBooks.books.book[i].authors.author[a].id;
@@ -62,7 +62,7 @@ exports.goodreads_callback = async function (req, res) {
         let author = { id: null, name: null }
         author.id = readBooks.books.book[i].authors.author.id;
         author.name = readBooks.books.book[i].authors.author.name;
-        
+
         // /////
 
         // console.log(book);
@@ -79,8 +79,8 @@ exports.goodreads_callback = async function (req, res) {
 
     let currentlyReadingBooks = await gr.getBooksOnUserShelf(userData.user.id, 'currently-reading');
 
-    for(let i = 0; i < currentlyReadingBooks.books.book.length; i++) {
-        
+    for (let i = 0; i < currentlyReadingBooks.books.book.length; i++) {
+
         let book = { id: null, isbn: null, isbn13: null, title: null, small_image_url: null, num_pages: null, authors: [], rates: null };
 
         book.id = currentlyReadingBooks.books.book[i].id._;
@@ -90,7 +90,7 @@ exports.goodreads_callback = async function (req, res) {
         book.small_image_url = currentlyReadingBooks.books.book[i].small_image_url;
         book.num_pages = currentlyReadingBooks.books.book[i].num_pages;
 
-        
+
         // for(let a = 0; a < currentlyReadingBooks.books.book[i].authors.author.length; a++) {
         //     let author = { id: null, name: null }
         //     author.id = currentlyReadingBooks.books.book[i].authors.author[a].id;
@@ -103,11 +103,23 @@ exports.goodreads_callback = async function (req, res) {
         author.id = currentlyReadingBooks.books.book[i].authors.author.id;
         author.name = currentlyReadingBooks.books.book[i].authors.author.name;
         // /////
-        
+
         book.authors.push(author);
 
         goodReadsUser.reading_books.push(book);
     }
+
+
+
+
+    axios.put('elasticsearch:9200/goodreadsusers/_doc/', goodReadsUser, { headers: { "Content-Type": "application/json" } })
+        .then(response => {
+            console.log(response);
+        })
+        .catch(error => {
+            console.log(error);
+        });
+
 
     res.json({ user: goodReadsUser });
 
