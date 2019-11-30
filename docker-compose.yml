@@ -1,10 +1,11 @@
 version: '3.3'
 services:
     elasticsearch:
-        image: 'docker.elastic.co/elasticsearch/elasticsearch:6.4.1'
+        image: 'docker.elastic.co/elasticsearch/elasticsearch:7.4.2'
         environment:
             - cluster.name=docker-cluster
             - bootstrap.memory_lock=true
+            - discovery.type=single-node
             - 'API_USER=${API_USER}'
             - 'API_SECRET=${API_SECRET}'
             - 'ES_JAVA_OPTS=-Xms512m -Xmx512m'
@@ -17,6 +18,9 @@ services:
 
 
     api:
+        build:
+            context: .
+            dockerfile: Dockerfile
         environment:
             - 'GOODREADS_KEY=${GOODREADS_KEY}'
             - 'GOODREADS_SECRET=${GOODREADS_SECRET}'
@@ -30,6 +34,8 @@ services:
         ports:
             - '8000:8000'
         restart: always
+        networks:
+            - esnet
 
 networks:
   esnet:

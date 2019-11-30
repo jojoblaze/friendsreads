@@ -39,7 +39,7 @@ router.get('/goodreads_callback', async function (req, res) {
 
     let oauth_token = req.query.oauth_token;
     console.log(oauth_token);
-    
+
     await gr.getAccessToken();
 
     let userData = await gr.getCurrentUserInfo().catch((errors) => { /*handle errors here*/ console.log(errors); });
@@ -50,8 +50,8 @@ router.get('/goodreads_callback', async function (req, res) {
     console.log(userData.user.id);
     let readBooks = await gr.getBooksOnUserShelf(userData.user.id, 'read').catch((errors) => { /*handle errors here*/ console.log(errors); });
 
-    for(let i = 0; i < readBooks.books.book.length; i++) {
-        
+    for (let i = 0; i < readBooks.books.book.length; i++) {
+
         let book = { id: null, isbn: null, isbn13: null, title: null, small_image_url: null, num_pages: null, authors: [], rates: null };
 
         book.id = readBooks.books.book[i].id._;
@@ -61,7 +61,7 @@ router.get('/goodreads_callback', async function (req, res) {
         book.small_image_url = readBooks.books.book[i].small_image_url;
         book.num_pages = readBooks.books.book[i].num_pages;
 
-        
+
         // for(let a = 0; a < readBooks.books.book[i].authors.author.length; a++) {
         //     let author = { id: null, name: null }
         //     author.id = readBooks.books.book[i].authors.author[a].id;
@@ -73,7 +73,7 @@ router.get('/goodreads_callback', async function (req, res) {
         let author = { id: null, name: null }
         author.id = readBooks.books.book[i].authors.author.id;
         author.name = readBooks.books.book[i].authors.author.name;
-        
+
         // /////
 
         // console.log(book);
@@ -90,8 +90,8 @@ router.get('/goodreads_callback', async function (req, res) {
 
     let currentlyReadingBooks = await gr.getBooksOnUserShelf(userData.user.id, 'currently-reading').catch((errors) => { /*handle errors here*/ console.log(errors); });
 
-    for(let i = 0; i < currentlyReadingBooks.books.book.length; i++) {
-        
+    for (let i = 0; i < currentlyReadingBooks.books.book.length; i++) {
+
         let book = { id: null, isbn: null, isbn13: null, title: null, small_image_url: null, num_pages: null, authors: [], rates: null };
 
         book.id = currentlyReadingBooks.books.book[i].id._;
@@ -101,7 +101,7 @@ router.get('/goodreads_callback', async function (req, res) {
         book.small_image_url = currentlyReadingBooks.books.book[i].small_image_url;
         book.num_pages = currentlyReadingBooks.books.book[i].num_pages;
 
-        
+
         // for(let a = 0; a < currentlyReadingBooks.books.book[i].authors.author.length; a++) {
         //     let author = { id: null, name: null }
         //     author.id = currentlyReadingBooks.books.book[i].authors.author[a].id;
@@ -114,7 +114,7 @@ router.get('/goodreads_callback', async function (req, res) {
         author.id = currentlyReadingBooks.books.book[i].authors.author.id;
         author.name = currentlyReadingBooks.books.book[i].authors.author.name;
         // /////
-        
+
         book.authors.push(author);
 
         goodReadsUser.reading_books.push(book);
@@ -128,6 +128,9 @@ router.get('/goodreads_callback', async function (req, res) {
 // more routes for our API will happen here
 const goodreadsRouter = require('./routes/goodreads.routes');
 
+goodreadsRouter.get('/', function (req, res) {
+    res.json({ message: 'friendsreads api' })
+});
 
 // REGISTER OUR ROUTES -------------------------------
 // all of our routes will be prefixed with /api

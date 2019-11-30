@@ -3,7 +3,7 @@
 const goodreads = require('goodreads-api-node');
 const axios = require('axios');
 
-let goodReadsUser = { id: null, name: null, read_books: [], reading_books: [] }
+// let goodReadsUser = { id: null, name: null, read_books: [], reading_books: [] }
 
 const myCredentials = {
     key: 'LCt55jANM25RMbHM51kzpg',
@@ -17,6 +17,20 @@ const gr = goodreads(myCredentials);
 gr.initOAuth(callbackURL);
 
 
+exports.goodreads_schema = async function (req, res) {
+
+    let schema = {
+        user: { id: null, name: null }, read_books: [
+            { id: null, isbn: null, isbn13: null, title: null, small_image_url: null, num_pages: null, authors: [], rates: null }
+        ], reading_books: [
+            { id: null, isbn: null, isbn13: null, title: null, small_image_url: null, num_pages: null, authors: [], rates: null }
+        ]
+    }
+
+
+    res.json(schema);
+};
+
 exports.goodreads_auth = async function (req, res) {
 
     let url = await gr.getRequestToken()
@@ -26,29 +40,48 @@ exports.goodreads_auth = async function (req, res) {
 
 exports.goodreads_callback = async function (req, res) {
 
+    let result = { user: { id: null, name: null }, read_books: [], reading_books: [], authors: [] }
+
     let oauth_token = req.query.oauth_token;
-    console.log(oauth_token);
 
     await gr.getAccessToken();
 
     let userData = await gr.getCurrentUserInfo();
 
-    goodReadsUser.id = userData.user.id;
-    goodReadsUser.name = userData.user.name;
+    result.user.id = userData.user.id;
+    result.user.name = userData.user.name;
 
-    console.log(userData.user.id);
+
     let readBooks = await gr.getBooksOnUserShelf(userData.user.id, 'read');
+
+    console.log("------------------------------------------------------------------------------");
+    console.log(JSON.stringify(readBooks));
+    console.log("------------------------------------------------------------------------------");
 
     for (let i = 0; i < readBooks.books.book.length; i++) {
 
         let book = { id: null, isbn: null, isbn13: null, title: null, small_image_url: null, num_pages: null, authors: [], rates: null };
 
-        book.id = readBooks.books.book[i].id._;
-        book.isbn = readBooks.books.book[i].isbn;
-        book.isbn13 = readBooks.books.book[i].isbn13;
-        book.title = readBooks.books.book[i].title;
-        book.small_image_url = readBooks.books.book[i].small_image_url;
-        book.num_pages = readBooks.books.book[i].num_pages;
+        let readBook = readBooks.books.book[i];
+
+        if (typeof (readBook) === "string") {
+            book.id = readBook.id._;
+        } else {
+            book.id = null;
+        }
+        if (typeof (readBook) === "string") {
+            book.isbn = readBook.id.isbn;
+        } else {
+            book.isbn = null;
+        }
+        if (typeof (readBook) === "string") {
+            book.isbn13 = readBook.id.isbn13;
+        } else {
+            book.isbn13 = null;
+        }
+        book.title = readBook.title;
+        book.small_image_url = readBook.small_image_url;
+        book.num_pages = readBook.num_pages;
 
 
         // for(let a = 0; a < readBooks.books.book[i].authors.author.length; a++) {
@@ -60,24 +93,23 @@ exports.goodreads_callback = async function (req, res) {
 
         // author mapping
         let author = { id: null, name: null }
-        author.id = readBooks.books.book[i].authors.author.id;
-        author.name = readBooks.books.book[i].authors.author.name;
+        author.id = readBook.authors.author.id;
+        author.name = readBook.authors.author.name;
+        book.authors.push(author);
 
         // /////
 
         // console.log(book);
-        let userReview = await gr.getUsersReviewForBook(goodReadsUser.id, book.id);
+        let userReview = await gr.getUsersReviewForBook(result.user.id, book.id);
 
         // console.log(userReview);
         book.rates = userReview.review.rating;
-        book.authors.push(author);
 
-
-        goodReadsUser.read_books.push(book);
+        result.read_books.push(book);
     }
 
 
-    let currentlyReadingBooks = await gr.getBooksOnUserShelf(userData.user.id, 'currently-reading');
+    let currentlyReadingBooks = await gr.getBooksOnUserShelf(result.user.id, 'currently-reading');
 
     for (let i = 0; i < currentlyReadingBooks.books.book.length; i++) {
 
@@ -106,13 +138,13 @@ exports.goodreads_callback = async function (req, res) {
 
         book.authors.push(author);
 
-        goodReadsUser.reading_books.push(book);
+        result.reading_books.push(book);
     }
 
 
 
 
-    axios.put('elasticsearch:9200/goodreadsusers/_doc/', goodReadsUser, { headers: { "Content-Type": "application/json" } })
+    axios.put('http://elasticsearch:9200/friends/_doc/', JSON.stringify(result), { headers: { "Content-Type": "application/json" } })
         .then(response => {
             console.log(response);
         })
@@ -121,6 +153,6 @@ exports.goodreads_callback = async function (req, res) {
         });
 
 
-    res.json({ user: goodReadsUser });
+    res.json(result);
 
 }
